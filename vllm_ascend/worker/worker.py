@@ -85,7 +85,13 @@ class NPUWorker(WorkerBase):
         **kwargs,
     ):
         """Initialize the worker for Ascend."""
-        if not envs_ascend.COMPILE_CUSTOM_KERNELS:
+        # Check if CPU simulation mode is enabled
+        is_cpu_simulation = envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION
+
+        if is_cpu_simulation:
+            logger.info("Running in CPU simulation mode. NPU operations will be mocked.")
+
+        if not envs_ascend.COMPILE_CUSTOM_KERNELS and not is_cpu_simulation:
             logger.warning(
                 "COMPILE_CUSTOM_KERNELS is set to False. "
                 "In most scenarios, without custom kernels, vllm-ascend will not function correctly."
@@ -95,22 +101,38 @@ class NPUWorker(WorkerBase):
         from vllm_ascend.utils import adapt_patch
 
         adapt_patch()
-        # Import _inductor for graph mode execution with triton
-        # This lazy import avoids torch_npu re-initialization in patch
-        from vllm.triton_utils import HAS_TRITON
 
-        if HAS_TRITON:
-            import torch_npu._inductor  # noqa: F401
-        # Register ops when worker init.
-        from vllm_ascend import ops
+        # In CPU simulation mode, skip NPU-specific imports and registrations
+        if is_cpu_simulation:
+            # Initialize mock modules for CPU simulation
+            from vllm_ascend._cpu_simulation import init_cpu_simulation
+            init_cpu_simulation()
 
-        ops.register_dummy_fusion_op()
-        if get_ascend_device_type() != AscendDeviceType.A5:
-            _register_atb_extensions()
-        register_ascend_customop(vllm_config)
-        # init ascend config and soc version
-        init_ascend_config(vllm_config)
-        check_ascend_device_type()
+            # Skip NPU-specific initializations
+            # Register dummy ops instead
+            from vllm_ascend import ops
+            ops.register_dummy_fusion_op()
+
+            # init ascend config
+            init_ascend_config(vllm_config)
+            check_ascend_device_type()
+        else:
+            # Import _inductor for graph mode execution with triton
+            # This lazy import avoids torch_npu re-initialization in patch
+            from vllm.triton_utils import HAS_TRITON
+
+            if HAS_TRITON:
+                import torch_npu._inductor  # noqa: F401
+            # Register ops when worker init.
+            from vllm_ascend import ops
+
+            ops.register_dummy_fusion_op()
+            if get_ascend_device_type() != AscendDeviceType.A5:
+                _register_atb_extensions()
+            register_ascend_customop(vllm_config)
+            # init ascend config and soc version
+            init_ascend_config(vllm_config)
+            check_ascend_device_type()
 
         super().__init__(
             vllm_config=vllm_config,
@@ -140,8 +162,12 @@ class NPUWorker(WorkerBase):
 
         self.use_v2_model_runner = envs_vllm.VLLM_USE_V2_MODEL_RUNNER
 
+        # In CPU simulation mode, skip npugraph_ex static kernel setup
+        is_cpu_simulation = envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION
+
         ascend_compilation_config = get_ascend_config().ascend_compilation_config
-        if ascend_compilation_config.enable_npugraph_ex and ascend_compilation_config.enable_static_kernel:
+        if (not is_cpu_simulation and ascend_compilation_config.enable_npugraph_ex
+                and ascend_compilation_config.enable_static_kernel):
             # Prevent duplicate triggers, execute the exit logic only once
             shutdown_request = False
 

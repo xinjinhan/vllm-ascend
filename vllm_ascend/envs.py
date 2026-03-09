@@ -117,6 +117,14 @@ env_variables: dict[str, Callable[[], Any]] = {
     "VLLM_ASCEND_FUSION_OP_TRANSPOSE_KV_CACHE_BY_BLOCK": lambda: bool(
         int(os.getenv("VLLM_ASCEND_FUSION_OP_TRANSPOSE_KV_CACHE_BY_BLOCK", "1"))
     ),
+    # CPU Simulation Mode: Enable CPU simulation for development and testing
+    # without NPU hardware. When enabled, all NPU operations will be mocked
+    # and executed on CPU instead.
+    "VLLM_ASCEND_ENABLE_CPU_SIMULATION": lambda: bool(int(os.getenv("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0"))),
+    # CPU Simulation Mode: Simulated execution time in milliseconds for each
+    # NPU operation. This simulates the execution time that would occur on NPU.
+    # Only effective when VLLM_ASCEND_ENABLE_CPU_SIMULATION=1.
+    "VLLM_ASCEND_CPU_SIMULATED_TIME_MS": lambda: float(os.getenv("VLLM_ASCEND_CPU_SIMULATED_TIME_MS", "0")),
 }
 
 # end-env-vars-definition
