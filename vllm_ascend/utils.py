@@ -684,12 +684,21 @@ _ascend_device_type = None
 
 def _init_ascend_device_type():
     global _ascend_device_type
+    # In CPU simulation mode, use default device type
+    if envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+        _ascend_device_type = AscendDeviceType.A2  # Default mock device type
+        return
     from vllm_ascend import _build_info  # type: ignore
     _ascend_device_type = AscendDeviceType[_build_info.__device_type__]
 
 
 def check_ascend_device_type():
     global _ascend_device_type
+    # In CPU simulation mode, skip device type check
+    if envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+        if _ascend_device_type is None:
+            _init_ascend_device_type()
+        return
     if _ascend_device_type is None:
         _init_ascend_device_type()
 

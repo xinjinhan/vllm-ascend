@@ -28,6 +28,7 @@ os.environ["VLLM_DISABLE_SHARED_EXPERTS_STREAM"] = "1"
 
 from vllm_ascend.ascend_config import init_ascend_config
 from vllm_ascend.utils import refresh_block_size
+import vllm_ascend.envs as envs_ascend
 
 # isort: off
 from vllm_ascend.utils import (ASCEND_QUANTIZATION_METHOD,
@@ -92,6 +93,11 @@ class NPUPlatform(Platform):
         ASCEND_QUANTIZATION_METHOD, COMPRESSED_TENSORS_METHOD
     ]
 
+    @classmethod
+    def is_cpu_simulation_enabled(cls) -> bool:
+        """Check if CPU simulation mode is enabled."""
+        return envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION
+
     def is_sleep_mode_available(self) -> bool:
         return True
 
@@ -147,10 +153,14 @@ class NPUPlatform(Platform):
 
     @classmethod
     def get_device_capability(cls, device_id: int = 0):
+        if cls.is_cpu_simulation_enabled():
+            return (8, 0)  # Mock NPU capability
         return None
 
     @classmethod
     def get_device_name(cls, device_id: int = 0) -> str:
+        if cls.is_cpu_simulation_enabled():
+            return "Ascend NPU (Mock)"
         return torch.npu.get_device_name(device_id)
 
     @classmethod
@@ -159,7 +169,9 @@ class NPUPlatform(Platform):
 
     @classmethod
     def set_device(cls, device: torch.device):
-        torch.npu.set_device(device)
+        if not cls.is_cpu_simulation_enabled():
+            torch.npu.set_device(device)
+        # CPU simulation mode doesn't need to set device
 
     @classmethod
     def check_and_update_config(cls, vllm_config: VllmConfig) -> None:

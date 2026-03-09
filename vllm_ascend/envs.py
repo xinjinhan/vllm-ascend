@@ -139,6 +139,16 @@ env_variables: Dict[str, Callable[[], Any]] = {
     # Whether to anbale balance scheduling
     "VLLM_ASCEND_BALANCE_SCHEDULING":
     lambda: bool(int(os.getenv("VLLM_ASCEND_BALANCE_SCHEDULING", '0'))),
+    # CPU Simulation Mode: Enable CPU simulation for development and testing
+    # without NPU hardware. When enabled, all NPU operations will be mocked
+    # and return fake values.
+    "VLLM_ASCEND_ENABLE_CPU_SIMULATION":
+    lambda: bool(int(os.getenv("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0"))),
+    # CPU Simulation Mode: Simulated execution time in milliseconds for each
+    # NPU operation. This simulates the execution time that would occur on NPU.
+    # Only effective when VLLM_ASCEND_ENABLE_CPU_SIMULATION=1.
+    "VLLM_ASCEND_CPU_SIMULATED_TIME_MS":
+    lambda: float(os.getenv("VLLM_ASCEND_CPU_SIMULATED_TIME_MS", "0")),
 }
 
 # end-env-vars-definition
