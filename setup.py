@@ -74,6 +74,12 @@ def get_value_from_lines(lines: List[str], key: str) -> str:
 
 
 def get_chip_type() -> str:
+    # Check if CPU simulation mode is enabled
+    cpu_simulation = os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1"
+    if cpu_simulation:
+        logging.info("CPU simulation mode enabled, using default chip type: Ascend910A2")
+        return "ascend910a2"
+
     try:
         npu_info_lines = subprocess.check_output(
             ['npu-smi', 'info', '-l']).decode().strip().split('\n')
