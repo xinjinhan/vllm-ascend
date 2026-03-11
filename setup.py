@@ -74,11 +74,13 @@ def get_value_from_lines(lines: List[str], key: str) -> str:
 
 
 def get_chip_type() -> str:
-    # Check if CPU simulation mode is enabled
-    cpu_simulation = os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1"
-    if cpu_simulation:
-        logging.info("CPU simulation mode enabled, using default chip type: Ascend910A2")
+    # Check if CPU simulation mode is enabled - must check EARLY before any npu-smi calls
+    cpu_sim_env = os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0")
+    if cpu_sim_env == "1":
+        logging.info("CPU simulation mode enabled (VLLM_ASCEND_ENABLE_CPU_SIMULATION=1), using default chip type: Ascend910A2")
         return "ascend910a2"
+    else:
+        logging.info(f"CPU simulation mode disabled (VLLM_ASCEND_ENABLE_CPU_SIMULATION={cpu_sim_env}), will try to detect NPU chip type")
 
     try:
         npu_info_lines = subprocess.check_output(
@@ -110,7 +112,8 @@ def get_chip_type() -> str:
                 f"Unable to recognize chip name: {chip_name}, please manually set env SOC_VERSION"
             )
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Get chip info failed: {e}")
+        logging.warning(f"npu-smi command failed (return code {e.returncode}): {e}. This is expected in CPU-only environment.")
+        return ""
     except FileNotFoundError:
         logging.warning(
             "npu-smi command not found, if this is an npu envir, please check if npu driver is installed correctly."
@@ -123,14 +126,23 @@ envs = load_module_from_path("envs",
 
 soc_version = get_chip_type()
 
+# Check CPU simulation mode at this level too
+cpu_simulation = os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1"
+
 if not envs.SOC_VERSION:
     if not soc_version:
-        raise RuntimeError(
-            "Could not determine chip type automatically via 'npu-smi'. "
-            "This can happen in a CPU-only environment. "
-            "Please set the 'SOC_VERSION' environment variable to specify the target chip."
-        )
-    envs.SOC_VERSION = soc_version
+        if cpu_simulation:
+            # In CPU simulation mode, use default chip type
+            logging.info("Using default chip type for CPU simulation mode")
+            envs.SOC_VERSION = "ascend910a2"
+        else:
+            raise RuntimeError(
+                "Could not determine chip type automatically via 'npu-smi'. "
+                "This can happen in a CPU-only environment. "
+                "Please set the 'SOC_VERSION' environment variable to specify the target chip."
+            )
+    else:
+        envs.SOC_VERSION = soc_version
 else:
     if soc_version and envs.SOC_VERSION != soc_version:
         logging.warning(
