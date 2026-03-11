@@ -292,10 +292,16 @@ def get_pip_packages(run_lambda, patterns=None):
 
 
 def get_npu_info(run_lambda):
+    # In CPU simulation mode, return mock NPU info
+    if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
+        return "CPU Simulation Mode: NPU info mocked"
     return run_and_read_all(run_lambda, 'npu-smi info')
 
 
 def get_cann_info(run_lambda):
+    # In CPU simulation mode, return mock CANN info
+    if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
+        return "CPU Simulation Mode: CANN info mocked"
     out = run_and_read_all(run_lambda, 'lscpu | grep Architecture:')
     cpu_arch = str(out).split()[-1]
     return run_and_read_all(
