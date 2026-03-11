@@ -15,6 +15,38 @@
 # This file is a part of the vllm-ascend project.
 #
 
+# CPU Simulation Mode: Inject mock modules BEFORE any other imports
+# This must be at the very beginning of this file to prevent torch_npu
+# from being loaded from the real NPU driver
+import os
+if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
+    import sys
+    from unittest.mock import MagicMock
+
+    # Inject mock modules before any NPU-related imports
+    if 'torch_npu' not in sys.modules:
+        sys.modules['torch_npu'] = MagicMock()
+    if 'torch.npu' not in sys.modules:
+        sys.modules['torch.npu'] = MagicMock()
+    if 'torch_npu._inductor' not in sys.modules:
+        sys.modules['torch_npu._inductor'] = MagicMock()
+    if 'torch_npu.npu' not in sys.modules:
+        sys.modules['torch_npu.npu'] = MagicMock()
+    if 'torch_npu.profiler' not in sys.modules:
+        sys.modules['torch_npu.profiler'] = MagicMock()
+    if 'torch_npu.op_plugin' not in sys.modules:
+        sys.modules['torch_npu.op_plugin'] = MagicMock()
+    if 'torch_npu.utils' not in sys.modules:
+        sys.modules['torch_npu.utils'] = MagicMock()
+    # Mock triton.runtime
+    if 'triton.runtime' not in sys.modules:
+        triton_runtime = MagicMock()
+        triton_runtime.driver.active.utils.get_device_properties.return_value = {
+            'num_aic': 8,
+            'num_vectorcore': 8,
+        }
+        sys.modules['triton.runtime'] = triton_runtime
+
 
 def register():
     """Register the NPU platform."""
