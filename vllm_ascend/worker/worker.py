@@ -24,10 +24,19 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-import torch_npu
+
+# In CPU simulation mode, skip importing torch_npu
+import vllm_ascend.envs as envs_ascend
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+    from torch_npu.op_plugin.atb._atb_ops import _register_atb_extensions
+    from torch_npu.profiler import dynamic_profile as dp
+else:
+    # Create mock classes for CPU simulation
+    _register_atb_extensions = lambda: None
+    dp = None
+
 import vllm.envs as envs_vllm
-from torch_npu.op_plugin.atb._atb_ops import _register_atb_extensions
-from torch_npu.profiler import dynamic_profile as dp
 from vllm.config import CUDAGraphMode, VllmConfig, set_current_vllm_config
 from vllm.distributed import (ensure_model_parallel_initialized,
                               init_distributed_environment)

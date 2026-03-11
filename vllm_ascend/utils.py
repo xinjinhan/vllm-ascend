@@ -29,9 +29,17 @@ from threading import Lock
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import torch
-import torch_npu  # noqa: F401
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu  # noqa: F401
+    from torch_npu.npu.streams import Event
+else:
+    # Create a mock Event class for CPU simulation
+    class Event:
+        pass
+
 from packaging.version import InvalidVersion, Version
-from torch_npu.npu.streams import Event
 from vllm.logger import logger
 from vllm.sequence import IntermediateTensors
 

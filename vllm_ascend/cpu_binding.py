@@ -5,14 +5,21 @@ from itertools import accumulate
 from typing import Dict, List, Optional, Tuple, Union
 
 import psutil
-import torch_npu
 from vllm.logger import logger
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
 
 ASCEND_RT_VISIBLE_DEVICES = os.getenv("ASCEND_RT_VISIBLE_DEVICES")
 CPU_BINDING_NUM = os.getenv("CPU_BINDING_NUM")
 
 
 def execute_command(cmd_list):
+    # In CPU simulation mode, return empty result
+    if envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+        return ""
     with subprocess.Popen(cmd_list,
                           shell=False,
                           stdout=subprocess.PIPE,
