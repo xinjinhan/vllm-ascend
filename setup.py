@@ -441,6 +441,11 @@ class cmake_build_ext(build_ext):
             print(f"Copy: {src_cann_ops_custom} -> {dst_cann_ops_custom}")
 
     def run(self):
+        # In CPU simulation mode, skip the build entirely
+        if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
+            logger.info("CPU simulation mode: skipping build_ext (no C extensions will be built)")
+            return
+
         # First, ensure ACLNN custom-ops is built and installed.
         self.run_command("build_aclnn")
         # Then, run the standard build_ext command to compile the extensions
@@ -450,6 +455,13 @@ class cmake_build_ext(build_ext):
 class custom_install(install):
 
     def run(self):
+        # In CPU simulation mode, skip the build entirely
+        if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
+            logger.info("CPU simulation mode: skipping build_ext (no C extensions will be built)")
+            # Still run install but skip build_ext
+            install.run(self)
+            return
+
         self.run_command("build_ext")
         install.run(self)
 
