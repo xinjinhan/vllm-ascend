@@ -75,14 +75,21 @@ def inject_cpu_simulation_mocks():
     mock_cpu_platform = MagicMock()
     mock_cpu_platform.get_device_capability = MagicMock(return_value=(8, 0))
 
+    # Mock CpuArchEnum
+    mock_cpu_arch_enum = MagicMock()
+    mock_cpu_arch_enum.ARM = "ARM"
+    mock_cpu_arch_enum.X86_64 = "X86_64"
+
     # Mock Platform and PlatformEnum
     mock_platforms.Platform = MagicMock()
     mock_platforms.PlatformEnum = MagicMock()
+    mock_platforms.CpuArchEnum = mock_cpu_arch_enum
 
     # Mock current_platform with proper dispatch_key
-    mock_current_platform = MagicMock()
-    mock_current_platform.get_global_graph_pool = MagicMock(return_value=None)
-    mock_current_platform.get_device_capability = MagicMock(return_value=(8, 0))
+    # Use plain Mock with explicit attributes instead of MagicMock
+    mock_current_platform = Mock()
+    mock_current_platform.get_global_graph_pool = Mock(return_value=None)
+    mock_current_platform.get_device_capability = Mock(return_value=(8, 0))
     # Use a string for dispatch_key to avoid torch.library issues
     mock_current_platform.dispatch_key = "CPU"
     mock_platforms.current_platform = mock_current_platform
