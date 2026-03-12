@@ -61,10 +61,9 @@ def inject_cpu_simulation_mocks():
     _orig_lib_impl = torch.library.Library.impl
 
     def _fixed_lib_impl(self, op_name, fn, dispatch_key=None, **kwargs):
-        # Convert dispatch_key to string - use "CPU" as default if None
-        if dispatch_key is None:
-            dispatch_key = "CPU"
-        elif not isinstance(dispatch_key, str):
+        # Only convert non-string dispatch_key to string, leave None and strings as-is
+        # This avoids conflicts with torch's internal dispatch key handling
+        if dispatch_key is not None and not isinstance(dispatch_key, str):
             dispatch_key = str(dispatch_key)
         return _orig_lib_impl(self, op_name, fn, dispatch_key=dispatch_key, **kwargs)
 
