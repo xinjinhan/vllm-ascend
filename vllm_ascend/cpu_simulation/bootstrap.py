@@ -85,7 +85,11 @@ def inject_cpu_simulation_mocks():
     # Add autotune mock - this is critical for vllm
     triton_runtime.autotune = MagicMock()
 
+    # Add jit mock - needed by vllm
+    triton_runtime.jit = MagicMock()
+
     sys.modules['triton.runtime'] = triton_runtime
+    sys.modules['triton.runtime.jit'] = triton_runtime.jit
 
     # Mock vllm.platforms with full current_platform support
     mock_platforms = create_mock_module('vllm.platforms')
