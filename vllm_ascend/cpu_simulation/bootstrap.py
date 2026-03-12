@@ -88,8 +88,15 @@ def inject_cpu_simulation_mocks():
     # Add jit mock - needed by vllm
     triton_runtime.jit = MagicMock()
 
+    # Add cache mock - needed by triton
+    triton_runtime.cache = MagicMock()
+
+    # Make triton.runtime look like a package (needed for submodules)
+    triton_runtime.__path__ = ['triton.runtime']
+
     sys.modules['triton.runtime'] = triton_runtime
     sys.modules['triton.runtime.jit'] = triton_runtime.jit
+    sys.modules['triton.runtime.cache'] = triton_runtime.cache
 
     # Mock vllm.platforms with full current_platform support
     mock_platforms = create_mock_module('vllm.platforms')
