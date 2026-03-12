@@ -176,7 +176,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
 # 运行 vllm serve
-python -m vllm serve Qwen/Qwen2-5-7B-Instruct --host 0.0.0.0 --port 8000
+vllm serve Qwen/Qwen2-5-7B-Instruct --host 0.0.0.0 --port 8000
 ```
 
 ### 4.2 在 Python 代码中使用
@@ -340,7 +340,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
 # 运行简单的推理测试（使用小模型）
-python -m vllm serve Qwen/Qwen2-0.5B-Instruct \
+vllm serve Qwen/Qwen2-0.5B-Instruct \
     --host 0.0.0.0 \
     --port 8000 \
     --dtype half

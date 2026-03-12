@@ -93,7 +93,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
 # 启动服务
-python -m vllm serve Qwen/Qwen2-0.5B-Instruct --host 0.0.0.0 --port 8000
+vllm serve Qwen/Qwen2-0.5B-Instruct --host 0.0.0.0 --port 8000
 ```
 
 #### 方法二：Python 代码中设置
@@ -186,7 +186,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=0
 
 # 运行 vllm
-python -m vllm serve <model> --port 8000
+vllm serve <model> --port 8000
 ```
 
 ### 6.2 CI/CD 集成
@@ -341,7 +341,7 @@ export VLLM_LOG_LEVEL=DEBUG
 export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 
 # 运行并查看日志
-python -m vllm serve <model> 2>&1 | grep -i simulation
+vllm serve <model> 2>&1 | grep -i simulation
 ```
 
 ---
