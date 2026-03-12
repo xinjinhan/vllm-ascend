@@ -108,13 +108,26 @@ def inject_cpu_simulation_mocks():
     mock_platforms.PlatformEnum = MagicMock()
     mock_platforms.CpuArchEnum = mock_cpu_arch_enum
 
-    # Mock current_platform with proper dispatch_key
+    # Mock current_platform with proper dispatch_key and all required methods
     # Use plain Mock with explicit attributes instead of MagicMock
     mock_current_platform = Mock()
+
+    # Set up all required methods
     mock_current_platform.get_global_graph_pool = Mock(return_value=None)
     mock_current_platform.get_device_capability = Mock(return_value=(8, 0))
-    # Use a string for dispatch_key to avoid torch.library issues
-    mock_current_platform.dispatch_key = "CPU"
+    mock_current_platform.support_static_graph_mode = Mock(return_value=False)
+    mock_current_platform.check_and_update_config = Mock(return_value=None)
+    mock_current_platform.is_cuda_alike = Mock(return_value=False)
+    mock_current_platform.support_hybrid_kv_cache = Mock(return_value=False)
+
+    # Try to use torch._C.DispatchKey if available, otherwise use string
+    try:
+        import torch
+        mock_current_platform.dispatch_key = torch._C.DispatchKey.CPU
+    except (AttributeError, ImportError):
+        # Fallback to string if torch._C.DispatchKey is not available
+        mock_current_platform.dispatch_key = "CPU"
+
     mock_platforms.current_platform = mock_current_platform
 
     mock_platforms.CPUPlatform = mock_cpu_platform
@@ -125,8 +138,13 @@ def inject_cpu_simulation_mocks():
     # Also mock vllm.platforms.cpu
     sys.modules['vllm.platforms.cpu'] = mock_cpu_platform
 
-    # Also mock vllm.platforms.cuda
-    sys.modules['vllm.platforms.cuda'] = create_mock_module('vllm.platforms.cuda')
+    # Also mock vllm.platforms.cuda with proper methods
+    mock_cuda_platform = MagicMock()
+    mock_cuda_platform.get_device_capability = MagicMock(return_value=(8, 0))
+    sys.modules['vllm.platforms.cuda'] = mock_cuda_platform
+
+    # Add torch_npu._C mock for internal functions
+    sys.modules['torch_npu._C'] = MagicMock()
 
     print("[vllm-ascend] CPU Simulation Mode: Mocks injected successfully")
     return True
