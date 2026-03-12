@@ -54,21 +54,6 @@ def inject_cpu_simulation_mocks():
     # Import torch to get real dtypes for torch_npu mock
     import torch
 
-    # Patch torch.library.Library.impl to handle non-string dispatch_key
-    # This fixes: TypeError: can only concatenate str (not "torch._C.DispatchKey") to str
-    # vllm does: key = ns + "/" + name + "/" + dispatch_key
-    import torch.library
-    _orig_lib_impl = torch.library.Library.impl
-
-    def _fixed_lib_impl(self, op_name, fn, dispatch_key=None, **kwargs):
-        # Only convert non-string dispatch_key to string, leave None and strings as-is
-        # This avoids conflicts with torch's internal dispatch key handling
-        if dispatch_key is not None and not isinstance(dispatch_key, str):
-            dispatch_key = str(dispatch_key)
-        return _orig_lib_impl(self, op_name, fn, dispatch_key=dispatch_key, **kwargs)
-
-    torch.library.Library.impl = _fixed_lib_impl
-
     # Set up proper dtype attributes on torch_npu mock
     torch_npu_mock = sys.modules['torch_npu']
     # These are the FP8 dtypes that vllm uses - get them safely
@@ -155,6 +140,17 @@ def inject_cpu_simulation_mocks():
 
     # Add torch_npu._C mock for internal functions
     sys.modules['torch_npu._C'] = MagicMock()
+
+    # Mock vllm.utils.torch_utils to skip direct_register_custom_op
+    # This avoids dispatch_key issues with torch.library.Library.impl
+    mock_torch_utils = MagicMock()
+
+    def mock_direct_register_custom_op(op_name, op_func, **kwargs):
+        """Mock that does nothing - skips custom op registration."""
+        pass
+
+    mock_torch_utils.direct_register_custom_op = mock_direct_register_custom_op
+    sys.modules['vllm.utils.torch_utils'] = mock_torch_utils
 
     print("[vllm-ascend] CPU Simulation Mode: Mocks injected successfully")
     return True
