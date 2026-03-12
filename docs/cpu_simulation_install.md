@@ -85,15 +85,17 @@ pip install vllm-ascend
 
 ### 4.1 启用模拟模式
 
-#### 方法一：环境变量（推荐）
+由于 vllm 的 CLI 导入顺序问题，需要使用 vllm-ascend 提供的引导脚本启动服务。
+
+#### 方法一：使用引导脚本（推荐）
 
 ```bash
 # 在运行前设置环境变量
 export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
-# 启动服务
-vllm serve Qwen/Qwen2-0.5B-Instruct --host 0.0.0.0 --port 8000
+# 使用引导脚本启动服务（在导入 vllm 之前注入 mock）
+python -m vllm_ascend.cpu_simulation.bootstrap serve Qwen/Qwen2-0.5B-Instruct --host 0.0.0.0 --port 8000
 ```
 
 #### 方法二：Python 代码中设置
@@ -186,7 +188,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=0
 
 # 运行 vllm
-vllm serve <model> --port 8000
+python -m vllm_ascend.cpu_simulation.bootstrap serve <model> --port 8000
 ```
 
 ### 6.2 CI/CD 集成

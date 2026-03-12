@@ -170,13 +170,15 @@ vllm_ascend/
 
 ### 4.1 启用模拟模式
 
+由于 vllm 的 CLI 导入顺序问题，需要使用 vllm-ascend 提供的引导脚本启动服务。
+
 ```bash
 # 设置环境变量
 export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
-# 运行 vllm serve
-vllm serve Qwen/Qwen2-5-7B-Instruct --host 0.0.0.0 --port 8000
+# 使用引导脚本启动服务（在导入 vllm 之前注入 mock）
+python -m vllm_ascend.cpu_simulation.bootstrap serve Qwen/Qwen2-5-7B-Instruct --host 0.0.0.0 --port 8000
 ```
 
 ### 4.2 在 Python 代码中使用
@@ -340,7 +342,7 @@ export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
 export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
 # 运行简单的推理测试（使用小模型）
-vllm serve Qwen/Qwen2-0.5B-Instruct \
+python -m vllm_ascend.cpu_simulation.bootstrap serve Qwen/Qwen2-0.5B-Instruct \
     --host 0.0.0.0 \
     --port 8000 \
     --dtype half
