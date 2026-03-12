@@ -96,12 +96,12 @@ def post_init(self):
         )
         self.parallel_config.disable_nccl_for_dp_synchronization = True
 
-    # In CPU simulation mode, skip this check
-    import vllm_ascend.envs as envs_ascend
-    if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    # Try to import current_platform, handle if it doesn't exist
+    try:
         from vllm.platforms import current_platform
         _check_device = current_platform.get_device_capability() == (7, 5)
-    else:
+    except (ImportError, AttributeError):
+        # current_platform doesn't exist in this vLLM version
         _check_device = False
 
     if (self.model_config is not None

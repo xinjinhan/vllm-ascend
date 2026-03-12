@@ -20,12 +20,15 @@ import numpy as np
 import torch
 import vllm.envs as envs
 
-# In CPU simulation mode, skip importing vllm.platforms.current_platform
-if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+# Try to import current_platform, handle if it doesn't exist
+try:
     from vllm.platforms import current_platform
-else:
-    # Create mock for CPU simulation
-    current_platform = None
+except (ImportError, AttributeError):
+    # current_platform doesn't exist in this vLLM version
+    # Create a mock for compatibility
+    from unittest.mock import MagicMock
+    current_platform = MagicMock()
+    current_platform.get_global_graph_pool = MagicMock(return_value=None)
 
 from vllm.compilation.counter import compilation_counter
 from vllm.compilation.cuda_graph import CUDAGraphOptions
