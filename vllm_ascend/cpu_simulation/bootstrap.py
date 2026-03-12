@@ -67,7 +67,8 @@ def inject_cpu_simulation_mocks():
         torch_npu_mock.float8_e5m2 = torch.float32
 
     # Mock triton.runtime with proper nested structure
-    triton_runtime = create_mock_module('triton.runtime')
+    # Use plain MagicMock instead of create_mock_module to ensure attributes work
+    triton_runtime = MagicMock()
 
     # Create proper nested mock structure for triton.runtime.driver.active.utils
     triton_driver = MagicMock()
@@ -81,9 +82,8 @@ def inject_cpu_simulation_mocks():
     triton_driver.active = triton_active
     triton_runtime.driver = triton_driver
 
-    # Add autotune mock
-    triton_autotune = MagicMock()
-    triton_runtime.autotune = triton_autotune
+    # Add autotune mock - this is critical for vllm
+    triton_runtime.autotune = MagicMock()
 
     sys.modules['triton.runtime'] = triton_runtime
 
