@@ -66,6 +66,10 @@ def inject_cpu_simulation_mocks():
     triton_driver.active = triton_active
     triton_runtime.driver = triton_driver
 
+    # Add autotune mock
+    triton_autotune = MagicMock()
+    triton_runtime.autotune = triton_autotune
+
     sys.modules['triton.runtime'] = triton_runtime
 
     # Mock vllm.platforms with full current_platform support
