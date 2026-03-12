@@ -16,17 +16,26 @@ Or as a wrapper:
 
 import os
 import sys
+from types import ModuleType
+from unittest.mock import MagicMock
+
+
+def create_mock_module(name):
+    """Create a mock module with proper __spec__ attribute."""
+    mock = MagicMock(spec=ModuleType)
+    mock.__name__ = name
+    mock.__spec__ = MagicMock()
+    mock.__spec__.name = name
+    mock.__spec__.submodule_search_locations = None
+    return mock
 
 
 def inject_cpu_simulation_mocks():
     """Inject mock modules before any other imports."""
     if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") != "1":
-        return
+        return False
 
     print("[vllm-ascend] CPU Simulation Mode: Injecting mocks...")
-
-    from unittest.mock import MagicMock
-    import sys
 
     # Inject mock modules before any NPU-related imports
     mock_modules = [
@@ -40,36 +49,43 @@ def inject_cpu_simulation_mocks():
     ]
 
     for mod_name in mock_modules:
-        if mod_name not in sys.modules:
-            sys.modules[mod_name] = MagicMock()
+        sys.modules[mod_name] = create_mock_module(mod_name)
 
     # Mock triton.runtime
-    if 'triton.runtime' not in sys.modules:
-        triton_runtime = MagicMock()
-        triton_runtime.driver.active.utils.get_device_properties.return_value = {
-            'num_aic': 8,
-            'num_vectorcore': 8,
-        }
-        sys.modules['triton.runtime'] = triton_runtime
+    triton_runtime = create_mock_module('triton.runtime')
+    triton_runtime.driver.active.utils.get_device_properties.return_value = {
+        'num_aic': 8,
+        'num_vectorcore': 8,
+    }
+    sys.modules['triton.runtime'] = triton_runtime
 
-    # Mock vllm.platforms if needed
-    if 'vllm.platforms' not in sys.modules:
-        mock_platforms = MagicMock()
-        mock_platforms.Platform = MagicMock()
-        mock_platforms.PlatformEnum = MagicMock()
-        mock_platforms.current_platform = MagicMock()
-        mock_platforms.current_platform.get_global_graph_pool = MagicMock(return_value=None)
-        mock_platforms.current_platform.get_device_capability = MagicMock(return_value=(8, 0))
-        sys.modules['vllm.platforms'] = mock_platforms
+    # Mock vllm.platforms with full current_platform support
+    mock_platforms = create_mock_module('vllm.platforms')
+    mock_platforms.Platform = MagicMock()
+    mock_platforms.PlatformEnum = MagicMock()
+    mock_platforms.current_platform = MagicMock()
+    mock_platforms.current_platform.get_global_graph_pool = MagicMock(return_value=None)
+    mock_platforms.current_platform.get_device_capability = MagicMock(return_value=(8, 0))
+    mock_platforms.CPUPlatform = MagicMock()
+    mock_platforms.CPUPlatform.get_device_capability = MagicMock(return_value=(8, 0))
+    sys.modules['vllm.platforms'] = mock_platforms
+
+    # Also mock vllm.platforms.cpu
+    sys.modules['vllm.platforms.cpu'] = create_mock_module('vllm.platforms.cpu')
+
+    # Also mock vllm.platforms.cuda
+    sys.modules['vllm.platforms.cuda'] = create_mock_module('vllm.platforms.cuda')
 
     print("[vllm-ascend] CPU Simulation Mode: Mocks injected successfully")
+    return True
 
 
 def main():
     """Main entry point."""
+    # Inject mocks FIRST, before any other imports
     inject_cpu_simulation_mocks()
 
-    # Import and run vllm CLI
+    # Now import and run vllm CLI
     from vllm.entrypoints.cli.main import main as vllm_main
 
     # Pass through all arguments
