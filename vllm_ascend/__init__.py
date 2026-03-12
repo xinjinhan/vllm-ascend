@@ -47,6 +47,19 @@ if os.environ.get("VLLM_ASCEND_ENABLE_CPU_SIMULATION", "0") == "1":
         }
         sys.modules['triton.runtime'] = triton_runtime
 
+    # Mock vllm.platforms if it fails to import current_platform
+    # This handles the case where vllm.platforms has import errors
+    if 'vllm.platforms' not in sys.modules:
+        mock_platforms = MagicMock()
+        # Provide mock for Platform and PlatformEnum
+        mock_platforms.Platform = MagicMock()
+        mock_platforms.PlatformEnum = MagicMock()
+        # Provide mock for current_platform if it doesn't exist
+        mock_platforms.current_platform = MagicMock()
+        mock_platforms.current_platform.get_global_graph_pool = MagicMock(return_value=None)
+        mock_platforms.current_platform.get_device_capability = MagicMock(return_value=(8, 0))
+        sys.modules['vllm.platforms'] = mock_platforms
+
 
 def register():
     """Register the NPU platform."""
