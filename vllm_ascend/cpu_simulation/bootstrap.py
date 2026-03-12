@@ -17,7 +17,7 @@ Or as a wrapper:
 import os
 import sys
 from types import ModuleType
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 
 def create_mock_module(name):
@@ -51,12 +51,21 @@ def inject_cpu_simulation_mocks():
     for mod_name in mock_modules:
         sys.modules[mod_name] = create_mock_module(mod_name)
 
-    # Mock triton.runtime
+    # Mock triton.runtime with proper nested structure
     triton_runtime = create_mock_module('triton.runtime')
-    triton_runtime.driver.active.utils.get_device_properties.return_value = {
+
+    # Create proper nested mock structure for triton.runtime.driver.active.utils
+    triton_driver = MagicMock()
+    triton_active = MagicMock()
+    triton_utils = MagicMock()
+    triton_utils.get_device_properties = MagicMock(return_value={
         'num_aic': 8,
         'num_vectorcore': 8,
-    }
+    })
+    triton_active.utils = triton_utils
+    triton_driver.active = triton_active
+    triton_runtime.driver = triton_driver
+
     sys.modules['triton.runtime'] = triton_runtime
 
     # Mock vllm.platforms with full current_platform support
