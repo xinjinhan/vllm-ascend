@@ -24,7 +24,8 @@ Usage:
     export VLLM_ASCEND_ENABLE_CPU_SIMULATION=1
     export VLLM_ASCEND_CPU_SIMULATED_TIME_MS=5
 
-    python -m vllm serve <model> ...
+    # Use bootstrap script to inject mocks before importing vllm
+    python -m vllm_ascend.cpu_simulation.bootstrap serve <model> ...
 """
 
 from vllm_ascend import envs
