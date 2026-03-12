@@ -1,6 +1,14 @@
 import torch
 import torch.nn.functional as F
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 from vllm.distributed import (get_dp_group, get_ep_group,
                               get_tensor_model_parallel_rank,
                               get_tensor_model_parallel_world_size,
@@ -9,8 +17,6 @@ from vllm.distributed import (get_dp_group, get_ep_group,
                               tensor_model_parallel_reduce_scatter)
 from vllm.forward_context import get_forward_context
 from vllm.utils.torch_utils import direct_register_custom_op
-
-import vllm_ascend.envs as envs_ascend
 from vllm_ascend.ascend_forward_context import MoECommType
 from vllm_ascend.ops.rotary_embedding import rope_forward_oot
 from vllm_ascend.ops.weight_prefetch import maybe_npu_prefetch

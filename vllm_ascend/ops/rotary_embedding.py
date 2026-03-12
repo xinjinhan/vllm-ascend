@@ -20,7 +20,15 @@ from typing import Optional, Tuple
 
 import einops
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 from vllm.model_executor.layers.rotary_embedding import (
     DeepseekScalingRotaryEmbedding, MRotaryEmbedding, RotaryEmbedding,
     YaRNScalingRotaryEmbedding)

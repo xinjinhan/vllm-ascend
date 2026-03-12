@@ -20,7 +20,15 @@ from enum import Enum
 from typing import ClassVar, List, Optional, Tuple, Type
 
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 import vllm.envs as envs_vllm
 from vllm.attention.backends.abstract import (AttentionBackend, AttentionImpl,
                                               AttentionLayer, AttentionType)

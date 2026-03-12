@@ -30,6 +30,9 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import torch
 
+# Import envs FIRST before using it
+import vllm_ascend.envs as envs_ascend
+
 # In CPU simulation mode, skip importing torch_npu
 if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
     import torch_npu  # noqa: F401
@@ -43,7 +46,6 @@ from packaging.version import InvalidVersion, Version
 from vllm.logger import logger
 from vllm.sequence import IntermediateTensors
 
-import vllm_ascend.envs as envs_ascend
 from vllm_ascend.ascend_config import WeightPrefetchConfig, get_ascend_config
 
 if TYPE_CHECKING:

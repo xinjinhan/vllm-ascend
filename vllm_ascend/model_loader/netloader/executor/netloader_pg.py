@@ -20,7 +20,15 @@ from datetime import timedelta
 from typing import Any, Optional
 
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 from torch._C._distributed_c10d import (_DEFAULT_PG_TIMEOUT,
                                         _register_process_group,
                                         _unregister_process_group)

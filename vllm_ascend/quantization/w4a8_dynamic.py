@@ -19,7 +19,15 @@ from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 from vllm.config import get_current_vllm_config
 from vllm.distributed import get_ep_group
 from vllm.forward_context import get_forward_context

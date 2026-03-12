@@ -7,6 +7,15 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 from unittest.mock import patch
 
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 import numpy as np
 import torch
 import torch_npu

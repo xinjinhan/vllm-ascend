@@ -3,7 +3,15 @@ from typing import Optional
 
 import torch
 import torch.distributed as dist
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
+
 from vllm.distributed import (get_dcp_group,
                               get_decode_context_model_parallel_world_size,
                               get_pcp_group)

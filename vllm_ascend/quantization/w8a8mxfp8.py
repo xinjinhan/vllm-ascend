@@ -18,7 +18,12 @@
 from typing import Any, Dict, Optional
 
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+
 from vllm.config import get_current_vllm_config
 
 

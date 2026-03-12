@@ -18,7 +18,14 @@
 from typing import Any, Dict, Optional
 
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
 
 from vllm_ascend.utils import (COMPRESSED_TENSORS_METHOD, AscendDeviceType,
                                get_ascend_device_type,
@@ -29,6 +36,9 @@ def quant_per_tensor(in_tensor: torch.Tensor,
                      input_scale: torch.Tensor,
                      input_offset: torch.Tensor,
                      function=False):
+    if torch_npu is None:
+        # CPU simulation mode: return fake quantized tensor
+        return in_tensor
     return torch_npu.npu_quantize(in_tensor, input_scale, input_offset,
                                   torch.qint8, -1, function)
 

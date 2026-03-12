@@ -18,7 +18,14 @@ import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
 
 KRONECKER_QUANT_MAX_BATCH_SIZE = 32768
 

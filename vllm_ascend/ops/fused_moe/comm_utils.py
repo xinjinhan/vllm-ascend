@@ -18,7 +18,14 @@
 import torch
 import torch.distributed
 import torch.distributed as dist
-import torch_npu
+import vllm_ascend.envs as envs_ascend
+
+# In CPU simulation mode, skip importing torch_npu
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    import torch_npu
+else:
+    # Create mock for CPU simulation
+    torch_npu = None
 
 COMM_STREAM = None
 
