@@ -96,12 +96,18 @@ def post_init(self):
         )
         self.parallel_config.disable_nccl_for_dp_synchronization = True
 
-    from vllm.platforms import current_platform
+    # In CPU simulation mode, skip this check
+    import vllm_ascend.envs as envs_ascend
+    if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+        from vllm.platforms import current_platform
+        _check_device = current_platform.get_device_capability() == (7, 5)
+    else:
+        _check_device = False
 
     if (self.model_config is not None
             and self.scheduler_config.enable_chunked_prefill
             and self.model_config.dtype == torch.float32
-            and current_platform.get_device_capability() == (7, 5)):
+            and _check_device):
         logger.warning_once(
             "Turing devices tensor cores do not support float32 matmul. "
             "To workaround this limitation, vLLM will set 'ieee' input "

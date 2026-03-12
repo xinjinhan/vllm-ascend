@@ -18,15 +18,21 @@ else:
 
 import numpy as np
 import torch
-import torch_npu
 import vllm.envs as envs
+
+# In CPU simulation mode, skip importing vllm.platforms.current_platform
+if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+    from vllm.platforms import current_platform
+else:
+    # Create mock for CPU simulation
+    current_platform = None
+
 from vllm.compilation.counter import compilation_counter
 from vllm.compilation.cuda_graph import CUDAGraphOptions
 from vllm.compilation.monitor import validate_cudagraph_capturing_enabled
 from vllm.config import CUDAGraphMode, VllmConfig
 from vllm.forward_context import BatchDescriptor, get_forward_context
 from vllm.logger import logger
-from vllm.platforms import current_platform
 
 from vllm_ascend.attention.utils import using_paged_attention
 
@@ -85,7 +91,11 @@ class ACLGraphWrapper:
         # assert runtime_mode is not NONE(no aclgraph), otherwise, we don't
         # need to initialize a ACLGraphWrapper.
         assert self.runtime_mode != CUDAGraphMode.NONE
-        self.graph_pool = current_platform.get_global_graph_pool()
+        # In CPU simulation mode, skip graph pool initialization
+        if not envs_ascend.VLLM_ASCEND_ENABLE_CPU_SIMULATION:
+            self.graph_pool = current_platform.get_global_graph_pool()
+        else:
+            self.graph_pool = None
 
         if cudagraph_options is None:
             cudagraph_options = CUDAGraphOptions()
