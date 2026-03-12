@@ -54,6 +54,19 @@ def inject_cpu_simulation_mocks():
     # Import torch to get real dtypes for torch_npu mock
     import torch
 
+    # Patch torch.library.Library.impl to handle DispatchKey enum in string concatenation
+    # This fixes: TypeError: can only concatenate str (not "torch._C.DispatchKey") to str
+    # vllm does: key = ns + "/" + name + "/" + dispatch_key
+    _original_impl = torch.library.Library.impl
+
+    def _patched_impl(self, name, fn, dispatch_key=None, **kwargs):
+        # Convert dispatch_key to string if it's a DispatchKey enum
+        if dispatch_key is not None and not isinstance(dispatch_key, str):
+            dispatch_key = str(dispatch_key)
+        return _original_impl(self, name, fn, dispatch_key=dispatch_key, **kwargs)
+
+    torch.library.Library.impl = _patched_impl
+
     # Set up proper dtype attributes on torch_npu mock
     torch_npu_mock = sys.modules['torch_npu']
     # These are the FP8 dtypes that vllm uses - get them safely
@@ -120,13 +133,8 @@ def inject_cpu_simulation_mocks():
     mock_current_platform.is_cuda_alike = Mock(return_value=False)
     mock_current_platform.support_hybrid_kv_cache = Mock(return_value=False)
 
-    # Try to use torch._C.DispatchKey if available, otherwise use string
-    try:
-        import torch
-        mock_current_platform.dispatch_key = torch._C.DispatchKey.CPU
-    except (AttributeError, ImportError):
-        # Fallback to string if torch._C.DispatchKey is not available
-        mock_current_platform.dispatch_key = "CPU"
+    # Use string for dispatch_key - vllm code expects string for concatenation
+    mock_current_platform.dispatch_key = "CPU"
 
     mock_platforms.current_platform = mock_current_platform
 
