@@ -51,6 +51,17 @@ def inject_cpu_simulation_mocks():
     for mod_name in mock_modules:
         sys.modules[mod_name] = create_mock_module(mod_name)
 
+    # Import torch to get real dtypes for torch_npu mock
+    import torch
+
+    # Set up proper dtype attributes on torch_npu mock
+    torch_npu_mock = sys.modules['torch_npu']
+    # These are the FP8 dtypes that vllm uses
+    torch_npu_mock.float8_e4m3fn = torch.float8_e4m3fn
+    torch_npu_mock.float8_e5m2 = torch.float8_e5m2
+    torch_npu_mock.float8_e4m3fnUZ = torch.float8_e4m3fnUZ
+    torch_npu_mock.float8_e5m2UZ = torch.float8_e5m2UZ
+
     # Mock triton.runtime with proper nested structure
     triton_runtime = create_mock_module('triton.runtime')
 
