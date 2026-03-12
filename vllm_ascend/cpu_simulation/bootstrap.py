@@ -70,17 +70,30 @@ def inject_cpu_simulation_mocks():
 
     # Mock vllm.platforms with full current_platform support
     mock_platforms = create_mock_module('vllm.platforms')
+
+    # Create a proper mock for CPU platform
+    mock_cpu_platform = MagicMock()
+    mock_cpu_platform.get_device_capability = MagicMock(return_value=(8, 0))
+
+    # Mock Platform and PlatformEnum
     mock_platforms.Platform = MagicMock()
     mock_platforms.PlatformEnum = MagicMock()
-    mock_platforms.current_platform = MagicMock()
-    mock_platforms.current_platform.get_global_graph_pool = MagicMock(return_value=None)
-    mock_platforms.current_platform.get_device_capability = MagicMock(return_value=(8, 0))
-    mock_platforms.CPUPlatform = MagicMock()
-    mock_platforms.CPUPlatform.get_device_capability = MagicMock(return_value=(8, 0))
+
+    # Mock current_platform with proper dispatch_key
+    mock_current_platform = MagicMock()
+    mock_current_platform.get_global_graph_pool = MagicMock(return_value=None)
+    mock_current_platform.get_device_capability = MagicMock(return_value=(8, 0))
+    # Use a string for dispatch_key to avoid torch.library issues
+    mock_current_platform.dispatch_key = "CPU"
+    mock_platforms.current_platform = mock_current_platform
+
+    mock_platforms.CPUPlatform = mock_cpu_platform
+    mock_platforms.CPU = mock_cpu_platform
+
     sys.modules['vllm.platforms'] = mock_platforms
 
     # Also mock vllm.platforms.cpu
-    sys.modules['vllm.platforms.cpu'] = create_mock_module('vllm.platforms.cpu')
+    sys.modules['vllm.platforms.cpu'] = mock_cpu_platform
 
     # Also mock vllm.platforms.cuda
     sys.modules['vllm.platforms.cuda'] = create_mock_module('vllm.platforms.cuda')
