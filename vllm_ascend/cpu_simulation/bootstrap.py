@@ -54,18 +54,48 @@ def inject_cpu_simulation_mocks():
     # Import torch to get real dtypes for torch_npu mock
     import torch
 
-    # Patch torch.library.Library.impl to handle DispatchKey enum in string concatenation
+    # Fix: Make torch._C.DispatchKey return string when used in string concatenation
     # This fixes: TypeError: can only concatenate str (not "torch._C.DispatchKey") to str
     # vllm does: key = ns + "/" + name + "/" + dispatch_key
-    _original_impl = torch.library.Library.impl
+    if hasattr(torch._C, 'DispatchKey'):
+        # Store original
+        _orig_dk = torch._C.DispatchKey
 
-    def _patched_impl(self, name, fn, dispatch_key=None, **kwargs):
-        # Convert dispatch_key to string if it's a DispatchKey enum
-        if dispatch_key is not None and not isinstance(dispatch_key, str):
-            dispatch_key = str(dispatch_key)
-        return _original_impl(self, name, fn, dispatch_key=dispatch_key, **kwargs)
+        # Create wrapper that returns string for any key access
+        class _DispatchKeyWrapper:
+            """Wrapper that makes DispatchKey enum work in string concatenation."""
+            CPU = "CPU"
+            CUDA = "CUDA"
+            PrivateUse1 = "PrivateUse1"
 
-    torch.library.Library.impl = _patched_impl
+            def __getattr__(self, name):
+                # Return a string-like object that works in concatenation
+                return _DispatchKeyStr(name)
+
+            def __str__(self):
+                return "CPU"
+
+            def __repr__(self):
+                return "CPU"
+
+        class _DispatchKeyStr:
+            """String wrapper for DispatchKey values."""
+            def __init__(self, name):
+                self._name = name
+
+            def __str__(self):
+                return str(self._name)
+
+            def __repr__(self):
+                return str(self._name)
+
+            def __add__(self, other):
+                return str(self) + str(other)
+
+            def __radd__(self, other):
+                return str(other) + str(self)
+
+        torch._C.DispatchKey = _DispatchKeyWrapper()
 
     # Set up proper dtype attributes on torch_npu mock
     torch_npu_mock = sys.modules['torch_npu']
