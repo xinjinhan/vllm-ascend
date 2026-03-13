@@ -115,6 +115,11 @@ def inject_cpu_simulation_mocks():
     # Add triton.backends mock
     mock_triton.backends = MagicMock()
     mock_triton.backends.__spec__ = MagicMock()
+    mock_triton.backends.__path__ = ['triton.backends']
+
+    # Add triton.backends.compiler mock
+    mock_triton.backends.compiler = MagicMock()
+    mock_triton.backends.compiler.__spec__ = MagicMock()
 
     # Add triton.runtime.autotuner mock
     mock_triton.runtime.autotuner = MagicMock()
