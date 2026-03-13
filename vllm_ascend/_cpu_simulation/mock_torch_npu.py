@@ -55,6 +55,15 @@ class MockNPU:
                 self.multi_processor_count = 8
                 self.uuid = "mock-npu-uuid-0000"
 
+            def __repr__(self):
+                return (
+                    f"MockDeviceProperties(name={self.name!r}, "
+                    f"major={self.major}, minor={self.minor}, "
+                    f"total_memory={self.total_memory}, "
+                    f"multi_processor_count={self.multi_processor_count}, "
+                    f"uuid={self.uuid!r})"
+                )
+
         return MockDeviceProperties()
 
     def get_soc_version(self) -> int:
