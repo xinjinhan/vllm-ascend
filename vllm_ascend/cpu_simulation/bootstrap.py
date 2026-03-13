@@ -66,9 +66,19 @@ def inject_cpu_simulation_mocks():
     except AttributeError:
         torch_npu_mock.float8_e5m2 = torch.float32
 
+    # Mock triton with proper structure
+    # Need to mock the full triton module before any submodules
+    mock_triton = MagicMock()
+    mock_triton.__path__ = ['triton']
+    mock_triton.__spec__ = MagicMock()
+    mock_triton.__spec__.name = 'triton'
+    mock_triton.__spec__.submodule_search_locations = ['triton']
+
     # Mock triton.runtime with proper nested structure
-    # Use plain MagicMock instead of create_mock_module to ensure attributes work
     triton_runtime = MagicMock()
+    triton_runtime.__spec__ = MagicMock()
+    triton_runtime.__spec__.name = 'triton.runtime'
+    triton_runtime.__spec__.submodule_search_locations = None
 
     # Create proper nested mock structure for triton.runtime.driver.active.utils
     triton_driver = MagicMock()
@@ -84,9 +94,11 @@ def inject_cpu_simulation_mocks():
 
     # Add autotune mock - this is critical for vllm
     triton_runtime.autotune = MagicMock()
+    triton_runtime.autotune.__spec__ = MagicMock()
 
     # Add jit mock - needed by vllm
     triton_runtime.jit = MagicMock()
+    triton_runtime.jit.__spec__ = MagicMock()
 
     # Add cache mock - needed by triton
     triton_runtime.cache = MagicMock()
@@ -94,6 +106,13 @@ def inject_cpu_simulation_mocks():
     # Make triton.runtime look like a package (needed for submodules)
     triton_runtime.__path__ = ['triton.runtime']
 
+    mock_triton.runtime = triton_runtime
+
+    # Add more triton submodules that might be imported
+    mock_triton.compiler = MagicMock()
+    mock_triton.compiler.__spec__ = MagicMock()
+
+    sys.modules['triton'] = mock_triton
     sys.modules['triton.runtime'] = triton_runtime
     sys.modules['triton.runtime.jit'] = triton_runtime.jit
     sys.modules['triton.runtime.cache'] = triton_runtime.cache
