@@ -56,12 +56,16 @@ class MockNPU:
                 self.uuid = "mock-npu-uuid-0000"
 
             def __repr__(self):
+                # Format memory in GB for readability
+                total_gb = self.total_memory / (1024 ** 3)
                 return (
-                    f"MockDeviceProperties(name={self.name!r}, "
-                    f"major={self.major}, minor={self.minor}, "
-                    f"total_memory={self.total_memory}, "
-                    f"multi_processor_count={self.multi_processor_count}, "
-                    f"uuid={self.uuid!r})"
+                    f"DeviceProperties(\n"
+                    f"  name          : {self.name},\n"
+                    f"  compute_cap  : {self.major}.{self.minor},\n"
+                    f"  total_memory  : {total_gb:.1f} GB ({self.total_memory} bytes),\n"
+                    f"  num_cores    : {self.multi_processor_count},\n"
+                    f"  uuid         : {self.uuid}\n"
+                    f")"
                 )
 
         return MockDeviceProperties()
