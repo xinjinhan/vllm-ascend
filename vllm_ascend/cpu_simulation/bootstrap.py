@@ -73,6 +73,7 @@ def inject_cpu_simulation_mocks():
     mock_triton.__spec__ = MagicMock()
     mock_triton.__spec__.name = 'triton'
     mock_triton.__spec__.submodule_search_locations = ['triton']
+    mock_triton.__version__ = "2.1.0"  # Required by torch._inductor
 
     # Mock triton.runtime with proper nested structure
     triton_runtime = MagicMock()
