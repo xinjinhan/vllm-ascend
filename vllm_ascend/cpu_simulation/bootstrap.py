@@ -127,6 +127,7 @@ def inject_cpu_simulation_mocks():
 
     sys.modules['triton'] = mock_triton
     sys.modules['triton.backends'] = mock_triton.backends
+    sys.modules['triton.backends.compiler'] = mock_triton.backends.compiler
     sys.modules['triton.runtime'] = triton_runtime
     sys.modules['triton.runtime.jit'] = triton_runtime.jit
     sys.modules['triton.runtime.cache'] = triton_runtime.cache
